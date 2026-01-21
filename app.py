@@ -4,27 +4,27 @@ import streamlit.components.v1 as components
 # --- ページ設定 ---
 st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate", layout="wide")
 
-# --- 【修正】メニューを完全消去する強力なCSS ---
-# !important をつけて、iPadなどの強制表示をねじ伏せます
+# --- 【修正】プロフィールやメニューを完全消去するCSS ---
+# 右下のプロフィールは "stStatusWidget" という名前で管理されています。これを狙い撃ちします。
 hide_streamlit_style = """
             <style>
-            /* ヘッダー全体を隠す */
-            header {visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;}
-            [data-testid="stHeader"] {visibility: hidden !important; display: none !important;}
+            /* 1. 右下のプロフィール・ステータス表示を消す（最重要） */
+            [data-testid="stStatusWidget"] {visibility: hidden !important; display: none !important;}
             
-            /* ツールバー（右上のメニューや右下のプロフィールなど）を隠す */
-            [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
-            [data-testid="stAppDeployButton"] {display: none !important;}
-            
-            /* ハンバーガーメニューを隠す */
+            /* 2. ヘッダーとハンバーガーメニューを消す */
             #MainMenu {visibility: hidden !important; display: none !important;}
+            header {visibility: hidden !important; display: none !important;}
             
-            /* フッターを隠す */
+            /* 3. 標準のフッター（Made with Streamlit）を消す */
             footer {visibility: hidden !important; display: none !important;}
             
-            /* その他、デコレーション要素を隠す */
+            /* 4. ツールバー全体を消す */
+            [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+            
+            /* 5. その他、デプロイボタンや上部の装飾バーを消す */
+            .stDeployButton {display: none !important;}
             [data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
-            [data-testid="stStatusWidget"] {visibility: hidden !important; display: none !important;}
+            [data-testid="stAppDeployButton"] {display: none !important;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -216,11 +216,10 @@ html_template = """
         // --- 軌跡更新ロジック ---
         let pathD = "";
         if (currentMode === "line") {
-            // 直線の場合は常に「直線x=1」を静的に表示し続ける（途切れ防止）
+            // 直線の場合は常に「直線x=1」を静的に表示し続ける
             pathD = "M 1,-10 L 1,10";
         } 
         else {
-            // 円の場合は「ペンの軌跡」を描く
             pathD = "M " + (calculateR(0)) + ",0 ";
             const step = 0.05;
             if (angle > 0.01) {
