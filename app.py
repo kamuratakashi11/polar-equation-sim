@@ -1,20 +1,34 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# ページ設定
-st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate v2", layout="wide")
+# --- ページ設定 ---
+st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate", layout="wide")
 
-st.markdown("## 極方程式 タッチシミュレータ Ultimate")
+# --- 【重要】生徒に他のアプリを見せないためのCSSハック ---
+# ヘッダー、フッター、メニューボタンを強制的に非表示にします
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stDeployButton {display:none;}
+            [data-testid="stToolbar"] {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# --- タイトルとモード選択 ---
+st.markdown("## 極方程式 タッチシミュレータ")
 st.markdown("画面をタッチしてグルグル回してください。直線のグラフも途切れずに表示されます。")
 
-# 方程式の選択ラジオボタン（順番を変更しました）
+# 方程式の選択ラジオボタン
 equation_choice = st.radio(
     "表示する極方程式を選んでください:",
     ("r = 2", "rcosθ = 1", "r = 2cosθ"),
     horizontal=True
 )
 
-# 選択された方程式をJSに渡すための設定
+# 選択された方程式をJSに渡すためのモード設定
 if equation_choice == "r = 2":
     mode = "circle_origin"
 elif equation_choice == "rcosθ = 1":
@@ -22,7 +36,7 @@ elif equation_choice == "rcosθ = 1":
 else:
     mode = "circle_shifted"
 
-# --- HTML/JS埋め込みコード ---
+# --- HTML/JS埋め込みコード (f-string不使用版) ---
 html_template = """
 <!DOCTYPE html>
 <html>
@@ -36,7 +50,7 @@ html_template = """
         margin: 0; 
         overflow: hidden; 
         background-color: white; 
-        touch-action: none;
+        touch-action: none; /* スクロール無効化 */
     }
     #canvas-container { 
         position: relative; 
@@ -187,12 +201,10 @@ html_template = """
             }
         }
 
-        // --- 軌跡更新ロジックの改善 ---
+        // --- 軌跡更新ロジック ---
         let pathD = "";
         if (currentMode === "line") {
-            // 【修正】直線の場合は、角度に関わらず「直線x=1」を常に表示し続ける
-            // 途切れたり消えたりするのを防ぐため、画面を貫く垂直線を静的に描画
-            // x=1, y=-10 から y=10 まで
+            // 直線の場合は常に「直線x=1」を静的に表示し続ける（途切れ防止）
             pathD = "M 1,-10 L 1,10";
         } 
         else {
@@ -283,6 +295,7 @@ html_template = """
         labelR.setAttribute("y", rLy);
         labelR.setAttribute("fill", mainColor);
 
+        // スナップ時の強調
         if(isSnapped) {
             infoAngle.setAttribute("fill", "red");
             infoAngle.style.fontSize = "0.35px";
@@ -295,6 +308,7 @@ html_template = """
         infoAngle.textContent = "θ = " + displayAngleLabel;
     }
 
+    // イベント系
     function getAngle(e) {
         const rect = svg.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -333,7 +347,7 @@ html_template = """
     window.addEventListener('mouseup', endDrag);
     window.addEventListener('touchend', endDrag);
 
-    update(0.001);
+    update(0.001); // 初期描画
 
 </script>
 </body>
