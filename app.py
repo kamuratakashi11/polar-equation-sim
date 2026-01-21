@@ -4,15 +4,27 @@ import streamlit.components.v1 as components
 # --- ページ設定 ---
 st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate", layout="wide")
 
-# --- 【重要】生徒に他のアプリを見せないためのCSSハック ---
-# ヘッダー、フッター、メニューボタンを強制的に非表示にします
+# --- 【修正】メニューを完全消去する強力なCSS ---
+# !important をつけて、iPadなどの強制表示をねじ伏せます
 hide_streamlit_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stDeployButton {display:none;}
-            [data-testid="stToolbar"] {visibility: hidden;}
+            /* ヘッダー全体を隠す */
+            header {visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;}
+            [data-testid="stHeader"] {visibility: hidden !important; display: none !important;}
+            
+            /* ツールバー（右上のメニューや右下のプロフィールなど）を隠す */
+            [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+            [data-testid="stAppDeployButton"] {display: none !important;}
+            
+            /* ハンバーガーメニューを隠す */
+            #MainMenu {visibility: hidden !important; display: none !important;}
+            
+            /* フッターを隠す */
+            footer {visibility: hidden !important; display: none !important;}
+            
+            /* その他、デコレーション要素を隠す */
+            [data-testid="stDecoration"] {visibility: hidden !important; display: none !important;}
+            [data-testid="stStatusWidget"] {visibility: hidden !important; display: none !important;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -36,7 +48,7 @@ elif equation_choice == "rcosθ = 1":
 else:
     mode = "circle_shifted"
 
-# --- HTML/JS埋め込みコード (f-string不使用版) ---
+# --- HTML/JS埋め込みコード ---
 html_template = """
 <!DOCTYPE html>
 <html>
@@ -169,7 +181,7 @@ html_template = """
     // r計算関数
     function calculateR(angle) {
         if (currentMode === "line") {
-            // 直線の場合、特異点(π/2, 3π/2)では非常に大きな値を返す
+            // 直線の場合
             if (Math.abs(Math.cos(angle)) < 0.001) return 200;
             return 1.0 / Math.cos(angle);
         } 
@@ -227,7 +239,6 @@ html_template = """
         // 座標計算
         let r = calculateR(angle);
         let drawR = r;
-        // 描画上の座標が無限に飛ばないように制限
         if (Math.abs(drawR) > 10) drawR = (drawR > 0) ? 10 : -10;
 
         let px = drawR * Math.cos(angle);
@@ -251,7 +262,6 @@ html_template = """
         pointP.setAttribute("cy", py);
         
         // 色設定
-        // 直線モードの場合、rの正負判定が敏感なので微小値を許容
         let mainColor = (r >= -0.01) ? "red" : "blue";
         let subColor = (r >= -0.01) ? "none" : "3, 3";
         
@@ -262,7 +272,6 @@ html_template = """
 
         // 情報表示
         infoR.innerHTML = `r = ${r.toFixed(2)}`;
-        // 直線モードの無限大表示
         if (currentMode === "line" && Math.abs(r) > 50) infoR.innerHTML = "r = ∞";
 
         // 角度マーク
