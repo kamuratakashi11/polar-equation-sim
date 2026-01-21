@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # --- ページ設定 ---
-st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate v4", layout="wide")
+st.set_page_config(page_title="極方程式タッチシミュレータ Ultimate v5", layout="wide")
 
 # --- メニュー完全消去CSS ---
 hide_streamlit_style = """
@@ -23,18 +23,22 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.markdown("## 極方程式 タッチシミュレータ")
 st.markdown("リストから方程式を選び、画面をタッチして操作してください。")
 
-# --- 方程式の選択（セレクトボックスに変更） ---
-equation_map = {
-    "r = 2": "circle_origin",
-    "rcosθ = 1": "line_fixed",
-    "r = 2cosθ": "circle_shifted",
-    "rcos(θ - α) = 1": "line_alpha"
-}
+# --- 【修正1】リストボックスを小さくする ---
+# col1, col2 = st.columns([1, 2]) とすることで、左側の狭いエリア(col1)にリストを置く
+col1, col2 = st.columns([1, 3]) 
 
-equation_choice = st.selectbox(
-    "表示する極方程式:",
-    list(equation_map.keys())
-)
+with col1:
+    equation_map = {
+        "r = 2": "circle_origin",
+        "rcosθ = 1": "line_fixed",
+        "r = 2cosθ": "circle_shifted",
+        "rcos(θ - α) = 1": "line_alpha"
+    }
+
+    equation_choice = st.selectbox(
+        "表示する極方程式:",
+        list(equation_map.keys())
+    )
 
 mode = equation_map[equation_choice]
 
@@ -59,7 +63,17 @@ html_template = """
     .axis-label { font-size: 0.2px; fill: #666; font-style: italic; pointer-events: none; }
     .status-text { font-size: 0.28px; font-weight: bold; fill: #333; pointer-events: none; font-family: 'Arial'; }
     .graph-label { font-size: 0.25px; font-weight: bold; pointer-events: none; text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;}
-    #eq-display { font-size: 0.4px; font-weight: bold; fill: #333; font-family: 'Times New Roman', serif; font-style: italic; pointer-events: none; opacity: 0.8; }
+    
+    /* 【修正2】数式表示のスタイル変更（サイズダウン） */
+    #eq-display { 
+        font-size: 0.25px; /* 0.4 -> 0.25 に縮小 */
+        font-weight: bold; 
+        fill: #333; 
+        font-family: 'Times New Roman', serif; 
+        font-style: italic; 
+        pointer-events: none; 
+        opacity: 0.8; 
+    }
     
     .axis { stroke: #000; stroke-width: 0.02; pointer-events: none; }
     
@@ -92,10 +106,10 @@ html_template = """
         <text x="0.1" y="-2.3" class="axis-label">y</text>
         <text x="-0.2" y="0.2" class="axis-label">O</text>
 
-        <text id="eq-display" x="0.5" y="-2.0">__EQUATION_NAME__</text>
+        <text id="eq-display" x="-2.3" y="-2.0" text-anchor="start">__EQUATION_NAME__</text>
 
-        <text id="info-angle" x="-2.4" y="-2.1" class="status-text">θ = 0</text>
-        <text id="info-r" x="-2.4" y="-1.8" class="status-text">r = 0.00</text>
+        <text id="info-angle" x="-2.3" y="-1.6" class="status-text">θ = 0</text>
+        <text id="info-r" x="-2.3" y="-1.3" class="status-text">r = 0.00</text>
 
         <path id="trajectory" d="M 0,0" />
         
@@ -187,18 +201,13 @@ html_template = """
 
         // --- αモード（直線の回転）の処理 ---
         if (currentMode === "line_alpha") {
-            // angle はここで "α" として扱われる
             let alpha = angle;
             
             // 1. 直線の描画
-            // 法線ベクトル (cosα, sinα)、直線の方向ベクトル (-sinα, cosα)
-            // 法線の先端 N = (cosα, sinα) * 1 (距離1なので)
             let nx = Math.cos(alpha);
-            let ny = -Math.sin(alpha); // SVG座標系反転
-            
-            // 直線を描くために、Nから左右に大きく伸ばす
+            let ny = -Math.sin(alpha); 
             let dx = -Math.sin(alpha);
-            let dy = -Math.cos(alpha); // SVG座標系反転 (cosαのy成分はsin, sinαのy成分はcos)
+            let dy = -Math.cos(alpha); 
             
             let lineLen = 10;
             let x1 = nx + lineLen * dx;
@@ -213,19 +222,18 @@ html_template = """
             normalLine.setAttribute("x2", nx);
             normalLine.setAttribute("y2", ny);
             
-            // 3. 直角マークの描画
+            // 3. 直角マーク
             rightAngle.style.display = "block";
-            let s = 0.15; // サイズ
-            // N点から、逆向きの法線方向と、直線の方向に少し進んだ点をつなぐ
+            let s = 0.15; 
             let px = nx - s * Math.cos(alpha);
             let py = ny - s * (-Math.sin(alpha));
-            let p2x = px + s * dx; // 直角の角
+            let p2x = px + s * dx; 
             let p2y = py + s * dy;
             let p3x = nx + s * dx;
             let p3y = ny + s * dy;
             rightAngle.setAttribute("d", `M ${nx.toFixed(3)},${ny.toFixed(3)} L ${p3x.toFixed(3)},${p3y.toFixed(3)} L ${p2x.toFixed(3)},${p2y.toFixed(3)} L ${px.toFixed(3)},${py.toFixed(3)}`);
 
-            // 4. ハンドルと視線ガイド（αの方向）
+            // 4. ハンドル
             let hx = 2.2 * Math.cos(alpha);
             let hy = -2.2 * Math.sin(alpha);
             handle.setAttribute("cx", hx);
@@ -234,9 +242,9 @@ html_template = """
             // 視線ガイド
             let lx = 6 * Math.cos(alpha);
             let ly = -6 * Math.sin(alpha);
-            sightLine.setAttribute("x1", 0); // 原点から
+            sightLine.setAttribute("x1", 0); 
             sightLine.setAttribute("y1", 0);
-            sightLine.setAttribute("x2", lx); // αの方向だけ描く
+            sightLine.setAttribute("x2", lx);
             sightLine.setAttribute("y2", ly);
             sightLine.style.strokeDasharray = "0.1, 0.1";
             sightLine.setAttribute("stroke", "blue");
@@ -260,13 +268,13 @@ html_template = """
                 infoAngle.style.fontSize = "0.28px";
                 handle.setAttribute("r", "0.2");
             }
-            return; // ここで終了
+            return; 
         }
 
         // --- 通常モード（r, θ）の処理 ---
         normalLine.style.display = "none";
         rightAngle.style.display = "none";
-        sightLine.setAttribute("x1", -6 * Math.cos(angle)); // 貫通させる
+        sightLine.setAttribute("x1", -6 * Math.cos(angle)); 
         sightLine.setAttribute("y1", -6 * -Math.sin(angle));
         sightLine.setAttribute("stroke", "#999");
         
@@ -306,8 +314,8 @@ html_template = """
         sightLine.setAttribute("x2", lx);
         sightLine.setAttribute("y2", ly);
 
-        radiusLine.setAttribute("stroke", "red"); // 復活
-        pointP.setAttribute("fill", "red"); // 復活
+        radiusLine.setAttribute("stroke", "red"); 
+        pointP.setAttribute("fill", "red"); 
         labelR.style.display = "block";
 
         radiusLine.setAttribute("x2", px);
